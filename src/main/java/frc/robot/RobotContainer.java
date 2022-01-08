@@ -2,9 +2,11 @@ package frc.robot;
 
 import java.io.File;
 import java.io.IOException;
+import java.nio.file.Path;
 import java.util.Hashtable;
 import java.util.List;
 
+import edu.wpi.first.wpilibj.DriverStation;
 import edu.wpi.first.wpilibj.Filesystem;
 import edu.wpi.first.wpilibj.Joystick;
 import edu.wpi.first.wpilibj.geometry.Pose2d;
@@ -12,11 +14,14 @@ import edu.wpi.first.wpilibj.geometry.Rotation2d;
 import edu.wpi.first.wpilibj.geometry.Translation2d;
 import edu.wpi.first.wpilibj.shuffleboard.BuiltInWidgets;
 import edu.wpi.first.wpilibj.shuffleboard.Shuffleboard;
+import edu.wpi.first.wpilibj.smartdashboard.Field2d;
 import edu.wpi.first.wpilibj.smartdashboard.SendableChooser;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import edu.wpi.first.wpilibj.trajectory.Trajectory;
+import edu.wpi.first.wpilibj.trajectory.TrajectoryConfig;
 import edu.wpi.first.wpilibj.trajectory.TrajectoryGenerator;
 import edu.wpi.first.wpilibj.trajectory.TrajectoryUtil;
+import edu.wpi.first.wpilibj.trajectory.constraint.DifferentialDriveVoltageConstraint;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.ParallelCommandGroup;
 import edu.wpi.first.wpilibj2.command.button.JoystickButton;
@@ -47,6 +52,7 @@ import frc.robot.commands.drivecommands.ArcadeDriveCommand;
 import frc.robot.commands.drivecommands.BackupCommand;
 import frc.robot.commands.drivecommands.LimelightTurnCommand;
 import frc.robot.commands.drivecommands.PixyTargetCommand;
+//import frc.robot.commands.drivecommands.SimpleMotorFeedforward;
 import frc.robot.commands.drivecommands.TrajectoryFollowCommand;
 import frc.robot.commands.feedercommands.AutoFeederCommand;
 import frc.robot.commands.feedercommands.FeederCommand;
@@ -82,24 +88,33 @@ public class RobotContainer {
 	private final Joystick m_operatorController = new Joystick(ControllerConstants.kOperatorControllerPort);
 	// auto selector
 	private final SendableChooser<Command> m_autoChooser = new SendableChooser<>();
+
+	// private final Field2d field = new Field2d();
+
 	private final ShuffleboardLogging[] m_subsystems = { m_arduinoSubsystem, m_armSubsystem, m_carouselSubsystem,
 			m_climberSubsystem, m_driveSubsystem, m_feederSubsystem, m_flywheelSubsystem, m_hoodSubsystem,
 			m_intakeSubsystem, m_limelightSubsystem };
 
 	public RobotContainer() {
-		m_autoChooser.addOption("Test path",
-				new TrajectoryFollowCommand(m_driveSubsystem,
-						TrajectoryGenerator.generateTrajectory(new Pose2d(0, 0, new Rotation2d()),
-								List.of(new Translation2d(2, 1), new Translation2d(1, 2), new Translation2d(2, 3)),
-								new Pose2d(0, 4, new Rotation2d()), DriveConstants.kTrajectoryConfig)));
-		m_autoChooser.addOption("Auto",
-				new ShootForwardCG(m_driveSubsystem, m_flywheelSubsystem, m_hoodSubsystem, m_feederSubsystem, m_carouselSubsystem));
+		// m_autoChooser.addOption("Test path",
+		// new TrajectoryFollowCommand(m_driveSubsystem,
+		// TrajectoryGenerator.generateTrajectory(new Pose2d(0, 0, new Rotation2d()),
+		// List.of(new Translation2d(2, 1), new Translation2d(1, 2), new
+		// Translation2d(2, 3)),
+		// new Pose2d(0, 4, new Rotation2d()), DriveConstants.kTrajectoryConfig)));
+		// m_autoChooser.addOption("Auto", new ShootForwardCG(m_driveSubsystem,
+		// m_flywheelSubsystem, m_hoodSubsystem,
+		// m_feederSubsystem, m_carouselSubsystem));
+
 		SmartDashboard.putData(m_autoChooser);
+		// SmartDashboard.putData(field);
 		configureButtonBindings();
 		// configureTestingBindings();
 		configureShuffleboard();
 		// Generate all trajectories at startup to prevent loop overrun
-		// generateAutonomousCommands();
+		m_autoChooser.addOption("Barrel Racing Auto",
+				new TrajectoryFollowCommand(m_driveSubsystem, generateAutonomousCommands()));
+
 		// LEDs
 		m_arduinoSubsystem.setDefaultCommand(new UpdateLEDsCommand(m_arduinoSubsystem, () -> { // TODO: add more things
 																								// for the LEDs to do
@@ -270,18 +285,43 @@ public class RobotContainer {
 	/**
 	 * Generates all autonomous commands.
 	 */
-	private void generateAutonomousCommands() {
-		Hashtable<String, Trajectory> trajectories = new Hashtable<String, Trajectory>();
-		File[] files = new File("\\home\\lvuser\\deploy\\paths\\output").listFiles();
-		for (File file : files)
-			try {
-				trajectories.put(file.getName(), TrajectoryUtil
-						.fromPathweaverJson(Filesystem.getDeployDirectory().toPath().resolve(file.getPath())));
-			} catch (IOException e) {
-				Shuffleboard.getTab("Errors").add("Trajectory Error", e.getStackTrace().toString()).withSize(4, 4)
-						.withPosition(0, 0).withWidget(BuiltInWidgets.kTextView);
-			}
-		for (String name : trajectories.keySet())
-			m_autoChooser.addOption(name, new TrajectoryFollowCommand(m_driveSubsystem, trajectories.get(name)));
+	private Trajectory generateAutonomousCommands() {
+		// Hashtable<String, Trajectory> trajectories = new Hashtable<String,
+		// Trajectory>();
+		// File[] files = new File("\\home\\lvuser\\deploy\\paths\\output").listFiles();
+		// for (File file : files)
+		// try {
+		// trajectories.put(file.getName(), TrajectoryUtil
+		// .fromPathweaverJson(Filesystem.getDeployDirectory().toPath().resolve(file.getPath())));
+		// } catch (IOException e) {
+		// Shuffleboard.getTab("Errors").add("Trajectory Error",
+		// e.getStackTrace().toString()).withSize(4, 4)
+		// .withPosition(0, 0).withWidget(BuiltInWidgets.kTextView);
+		// }
+		// for (String name : trajectories.keySet())
+		// m_autoChooser.addOption(name, new TrajectoryFollowCommand(m_driveSubsystem,
+		// trajectories.get(name)));
+
+		// String trajectoryJSON = "paths/BarrelRacing.wpilib.json";
+		// Trajectory trajectory = new Trajectory();
+		// try {
+		// Path trajectoryPath =
+		// Filesystem.getDeployDirectory().toPath().resolve(trajectoryJSON);
+		// trajectory = TrajectoryUtil.fromPathweaverJson(trajectoryPath);
+		// } catch (IOException ex) {
+		// DriverStation.reportError("Unable to open trajectory: " + trajectoryJSON,
+		// ex.getStackTrace());
+		// } return trajectory;
+
+		Trajectory exampleTrajectory = TrajectoryGenerator.generateTrajectory(
+				// Start at the origin facing the +X direction
+				new Pose2d(0, 2.286, new Rotation2d(0)),
+				// Pass through these two interior waypoints, making an 's' curve path
+				List.of(new Translation2d(1, 1.286)),
+				// End 3 meters straight ahead of where we started, facing forward
+				new Pose2d(3, 2.286, new Rotation2d(0)),
+				// Pass config
+				DriveConstants.kTrajectoryConfig);
+			return exampleTrajectory;
 	}
 }

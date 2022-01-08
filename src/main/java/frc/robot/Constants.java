@@ -216,6 +216,20 @@ public final class Constants {
 		public static final double kBackupDistance = Units.feetToMeters(2);
 		public static final double kRampRate = .1;
 		public static final double kSpeedLimitFactor = .75;
+
+		public static final boolean kLeftSensorPhase = true; //TODO these are totally arbitrary right now and need to be checked
+		public static final boolean kRightSensorPhase = false;
+
+		public static final boolean kEnableVoltageComp = true;
+		public static final double kVoltageComp = 12;
+		public static final double kEncoderCounts = 4096;
+
+		public static final double kEncoderPositionConversionFactor = (1/DriveConstants.kEncoderCounts)*
+		(1 / DriveConstants.kGearRatio) * Math.PI * DriveConstants.kWheelDiameterMeters;
+
+		public static final double kEncoderVelocityConversionFactor = (1/DriveConstants.kEncoderCounts)*
+		(1 / DriveConstants.kGearRatio) * Math.PI * DriveConstants.kWheelDiameterMeters * 1000;
+
 	}
 
 	public static final class FeederConstants {
